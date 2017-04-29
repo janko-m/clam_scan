@@ -63,12 +63,20 @@ describe ClamScan do
   end
 
   context :streaming do
-    it 'detects safety from streamed data' do
+    it 'detects safety from streamed string' do
       expect(scan(stream: File.read(safe_path)).safe?).to be_truthy
     end
 
-    it 'detects a virus from streamed data' do
+    it 'detects safety from streamed IO' do
+      expect(scan(stream: File.open(safe_path)).safe?).to be_truthy
+    end
+
+    it 'detects a virus from streamed string' do
       expect(scan(stream: File.read(eicar_path)).virus?).to be_truthy
+    end
+
+    it 'detects a virus from streamed IO' do
+      expect(scan(stream: File.open(eicar_path)).virus?).to be_truthy
     end
   end
 

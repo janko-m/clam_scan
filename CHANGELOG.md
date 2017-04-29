@@ -1,3 +1,12 @@
+# HEAD
+
+### Allow `stream` to be an IO object
+
+In addition to passing `stream` as a String, now you can also pass in any IO
+object, which will be streamed to the standard input. This is suitable for
+larger files, where we want to avoid having to load the whole file into
+memory.
+
 # 0.0.2
 
 ### Add `fdpass` to validated options

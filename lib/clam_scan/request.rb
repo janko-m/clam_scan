@@ -1,25 +1,37 @@
+require "open3"
+
 module ClamScan
   class Request
     class << self
       def send (opts={})
-        output_lines = []
+        output = nil
 
         begin
-          IO.popen(popen_args(opts), 'r+') do |f|
+          Open3.popen3(*popen_args(opts)) do |stdin, stdout, stderr|
+            [stdin, stdout, stderr].each(&:binmode)
+
+            stdout_reader = Thread.new { stdout.read }
+            stderr_reader = Thread.new { stderr.read }
+
             if opts[:stream]
-              f.write opts[:stream]
-              f.close_write
+              begin
+                if opts[:stream].respond_to?(:read)
+                  IO.copy_stream(opts[:stream], stdin)
+                elsif opts[:stream].is_a?(String)
+                  stdin.write opts[:stream]
+                end
+              rescue Errno::EPIPE
+              end
             end
-            while line = f.gets
-              output_lines << line
-            end
+            stdin.close
+
+            output = stdout_reader.value
           end
         rescue SystemCallError => e
           raise RequestError, "An error occured while making system call to #{::ClamScan.configuration.client_location}: #{e.to_s}"
         end
 
-        output_string = output_lines.join("\n")
-        Response.new($?, output_string)
+        Response.new($?, output)
       end
 
     private
